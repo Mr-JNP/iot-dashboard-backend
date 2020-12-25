@@ -17,6 +17,7 @@ const port = 3100;
 
 app.use(cors());
 app.get("/", async (_req, res) => {
+  console.log("Client called API");
   const tempData = await MQTT.find({ topic: "Temperature" })
     .sort({ timestamp: -1 })
     .limit(20);
@@ -24,14 +25,18 @@ app.get("/", async (_req, res) => {
     .sort({ timestamp: -1 })
     .limit(20);
 
-  const temperature = tempData.map((doc) => ({
-    time: doc.datetime,
-    value: doc.payload,
-  }));
-  const humidity = humData.map((doc) => ({
-    time: doc.datetime,
-    value: doc.payload,
-  }));
+  const temperature = tempData
+    .map((doc) => ({
+      time: doc.datetime,
+      value: doc.payload,
+    }))
+    .reverse();
+  const humidity = humData
+    .map((doc) => ({
+      time: doc.datetime,
+      value: doc.payload,
+    }))
+    .reverse();
 
   res.status(200).json({ temperature, humidity });
 });
