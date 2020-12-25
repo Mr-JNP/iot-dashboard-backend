@@ -2,8 +2,6 @@ const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const socket = require("socket.io");
-
-const mockdata = require("./utils/mockdata");
 const MQTT = require("./model");
 
 const app = express();
@@ -18,14 +16,30 @@ mongoose
 const port = 3100;
 
 app.use(cors());
-app.get("/", (_req, res) => {
-  res.status(200).json(mockdata);
+app.get("/", async (_req, res) => {
+  const tempData = await MQTT.find({ topic: "Temperature" })
+    .sort({ timestamp: -1 })
+    .limit(20);
+  const humData = await MQTT.find({ topic: "Humidity" })
+    .sort({ timestamp: -1 })
+    .limit(20);
+
+  const temperature = tempData.map((doc) => ({
+    time: doc.datetime,
+    value: doc.payload,
+  }));
+  const humidity = humData.map((doc) => ({
+    time: doc.datetime,
+    value: doc.payload,
+  }));
+
+  res.status(200).json({ temperature, humidity });
 });
 
 const server = require("http").createServer(app);
 const io = socket(server);
 
-io.on("connection", () => {
+io.on("connection", (socket) => {
   console.info(`client ${socket.id} connected`);
 });
 
